@@ -48,14 +48,21 @@ def sine_callback(outdata, frames, time, status):
 
 
 def play_audio():
+    #Port Audio OutputStream
+    #context manager for a real time audio stream
     with sd.OutputStream(samplerate=fs, channels=1,
                         callback=sine_callback):
 
-        while True: #what dis do?
-            sd.sleep(1000)
+        #the stream will automatically close when we reach the end of the "with"
+        #block so we need to keep a loop going so the stream stays alive
+        while True:
+            sd.sleep(1000) #what dis do?
 
 """ MAIN """
 # set up audio thread
+# need to put audio stuff on a different thread otherwise the
+#program wont advance past invoking play_audio()
+#need to keep going to use the UI
 audio_thread = threading.Thread(target=play_audio, daemon=True)
 audio_thread.start()
 
