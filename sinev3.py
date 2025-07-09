@@ -12,7 +12,7 @@ bit depth: 24bit integer
 """
 
 """
-Using Tk to control volume and freq
+TODO: have freq slider be log scale
 """
 
 fs = 44100 #samples per second
@@ -26,6 +26,10 @@ def update_angledelta(freq):
     global angle_delta
     angle_delta = cyclesPerSample*2.0*np.pi
 
+def on_feq_change(logfreq):
+    freq = 10 ** float(logfreq)
+    update_angledelta(freq)
+
 """
 def update_vol(vol):
     global volume
@@ -38,8 +42,8 @@ def sine_callback(outdata, frames, time, status):
         global current_angle
         global volume
         angles = current_angle + np.arange(frames)*angle_delta
-        angles = angles.reshape(-1,1) #this will start at current anlge
-        outdata[:] = volume*np.sin(angles) #need to reshape
+        angles = angles.reshape(-1,1)
+        outdata[:] = volume*np.sin(angles)
         current_angle = angles[-1] + angle_delta
 
 
@@ -51,7 +55,7 @@ def play_audio():
             sd.sleep(1000)
 
 """ MAIN """
-# set up main window
+# set up audio thread
 audio_thread = threading.Thread(target=play_audio, daemon=True)
 audio_thread.start()
 
@@ -67,16 +71,20 @@ root.rowconfigure(0, weight=1)
 #NEED LABELS FOR VOL AND FREQ VALUES
 
 #Create the Freq and Volume Scales
+#log scale log10(40)=1.60 log10(5000)~3.7
 freq_scale = ttk.Scale(mainframe, orient=HORIZONTAL,
-                        length = 200, from_ = 40.0, to=10000.0,
-                        command = update_angledelta)
+                        length = 200, from_ = 1.60, to=3.7,
+                        command = on_feq_change)
 freq_scale.grid(column = 0, row =2, sticky = 'we')
-freq_scale.set(440)
+freq_scale.set(2.643)
 
 """
-vol_scale = ttk.Scale(mainframe, orient=VERTICAL,
+vol_scale = ttk.Scale(mainframe, orient=HORIZONTAL,
                         length = 200, from_ = 0.0, to = 1.0,
                         command = update_vol)
+
+vol_scale.grid(column = 0, row =3, sticky = 'we')
+vol_scale.set(.5)
 """
 #Create the Play/Pause widget
 
