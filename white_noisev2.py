@@ -20,7 +20,7 @@ Using Callback method
 fs = 44100
 chunk = 1024
 #keep the volume between 0 and 1 so I don't blow my speakers
-volume = .3
+volume = .2
 
 #fill an numpy array with the data
 def noise_callback(outdata, frames, time, status):

@@ -12,7 +12,7 @@ bit depth: 24bit integer
 """
 
 """
-TODO: have freq slider be log scale
+TODO: smooth the frequencey changes
 """
 
 fs = 44100 #samples per second
