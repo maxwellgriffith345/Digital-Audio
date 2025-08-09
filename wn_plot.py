@@ -2,7 +2,7 @@
 
 import queue
 import sys
-
+import threading
 
 from matplotlib.animation import FuncAnimation
 import matplotlib.pyplot as plt
@@ -16,10 +16,6 @@ bit depth: 24bit integer
 2 channels
 """
 
-"""
-Using Callback method
-"""
-"""TODO: Not a smooth audio output, coming in and out"""
 #frames/samples per second
 fs = 44100
 #chunk = 1024
@@ -31,15 +27,29 @@ interval = 30 #ms min time between plot updates
 
 
 #create queue to pass data from callback to graph
-q = queue.Queue()
+q = queue.Queue(maxsize=10)
 
 #fill an numpy array with the data
 def noise_callback(outdata, frames, time, status):
     noise = np.random.normal(0,volume, size=(frames,1)).astype(np.float32)
-    q.put(noise[::downsample,])
+
+    try:
+        q.put_nowait(noise[::downsample,])
+    except queue.Full:
+        pass
+
     outdata[:]=noise.reshape(-1,1)
+    """
+    q.put is blocking the audio stream causing drops
+    graphing function isnt pulling form que fast enough
+    blocks the return of noise_callback
+    """
+def play_audio():
+    with sd.OutputStream(samplerate=fs,channels=1,
+                        callback=noise_callback):
 
-
+        while True:
+            sd.sleep(1000)
 
 def update_plot(frame): #why do we need to pass frame?
     """This is called by matplotlib for each plot update.
@@ -69,10 +79,6 @@ def update_plot(frame): #why do we need to pass frame?
 
     return lines
 
-
-
-
-
 try:
 
     length = int(window * fs / (1000 * downsample))
@@ -89,29 +95,11 @@ try:
                    right=False, left=False, labelleft=False)
     fig.tight_layout(pad=0)
 
-    stream = sd.OutputStream(
-        samplerate=fs,
-        channels=1,
-        callback=noise_callback
-        )
+    audio_thread = threading.Thread(target=play_audio, daemon=True)
+    audio_thread.start()
 
     ani = FuncAnimation(fig, update_plot, interval, blit=True)
+    plt.show()
 
-    with stream:
-        plt.show()
 except KeyboardInterrupt:
     print("playback stopped by user")
-
-
-"""
-REFRESHER ON TRY/EXCEPT
-try: runs the code until/if an except is caught
-except ExceptionType: tells the program what to do when an except of
-ExceptionType is caught
-exceptions are errors, normally the program would break and stopped
-which is why you want to "handle" them
-
-REFRESHER ON WITH
-it creates a context manager to automatically handle resources
-
-"""

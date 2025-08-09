@@ -22,3 +22,10 @@
   - take stuff from the queue q.get()
   - take stuff if it is available no wait q.get_nowait()
   - Use Cases: pass data from call back to a graph
+- What is "Deque", and why do we use it?
+
+
+## DSP Programming
+- How to pass audio data from real time audio call back to NRT threads for graphs etc?
+  - lock-free ring buffers aka circular buffers to move data between threads
+  - python does not have lock-free ring buffers due to GIL
