@@ -23,6 +23,14 @@
   - take stuff if it is available no wait q.get_nowait()
   - Use Cases: pass data from call back to a graph
 - What is "Deque", and why do we use it?
+- Passing a queue into a class
+`class NoisePlot(QtWidgets.QMainWindow):
+      def __init__(self, data_queue, fs, downsample, window_ms):
+          super().__init__()
+          self.q = data_queue `
+  - 'data_queue' is a refernce to the queue outside the class not a copy
+  - python objects are 'mutable' so assignment binds another name to the same object
+  - read more about 'mutable' objects in python
 
 
 ## DSP Programming
