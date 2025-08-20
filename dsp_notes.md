@@ -1,4 +1,5 @@
 ## TODO
+- Put NoisePlot is a seperate module to reuse
 - Code to graph signals like in an EQ
   - x axis is freq, y is amplitude
   - need to use fft of some sort?
@@ -37,3 +38,13 @@
 - How to pass audio data from real time audio call back to NRT threads for graphs etc?
   - lock-free ring buffers aka circular buffers to move data between threads
   - python does not have lock-free ring buffers due to GIL
+- FIFO: first in first out. in relation to a que or buffer
+
+
+## FFT
+[JUCE FFT Tutorial](https://juce.com/tutorials/tutorial_simple_fft/)
+- What is the 'order' of the FFT?
+  - the size of the window
+  - the number of points the FFT will operate on is 2^order
+  - why?
+  - it's convered to binary??

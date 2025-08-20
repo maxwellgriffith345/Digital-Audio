@@ -1,4 +1,4 @@
-""" Plot white noise signal with sounddevice and matplotlib"""
+""" Plot white noise signal with sounddevice and pyqtgraph"""
 
 import queue
 import sys
@@ -10,6 +10,7 @@ import sounddevice as sd
 from PyQt5 import QtWidgets, QtCore
 import pyqtgraph as pg
 
+from audio_plots import NoisePlot
 """
 SYSTEM INFO
 sample rate: 44100
@@ -50,41 +51,6 @@ def play_audio():
 
         while True:
             sd.sleep(1000)
-
-class NoisePlot(QtWidgets.QMainWindow):
-    def __init__(self, data_queue, fs, downsample, window_ms):
-        super().__init__()
-        self.q = data_queue  # store reference to the queue
-
-        # Setup the plot
-        self.plot_widget = pg.PlotWidget()
-        self.setCentralWidget(self.plot_widget)
-        self.plot_widget.setYRange(-1, 1)
-        self.plot_widget.showGrid(y=True)
-
-        length = int(window_ms * fs / (1000 * downsample))
-        self.plotdata = np.zeros(length)
-        self.curve = self.plot_widget.plot(self.plotdata, pen='y')
-
-        # Timer for updates
-        self.timer = QtCore.QTimer()
-        self.timer.timeout.connect(self.update_plot)
-        self.timer.start(30)
-
-    def update_plot(self):
-        updated = False
-        while not self.q.empty():
-            try:
-                data = self.q.get_nowait().flatten()
-                shift = len(data)
-                self.plotdata = np.roll(self.plotdata, -shift)
-                self.plotdata[-shift:] = data
-                updated = True
-            except queue.Empty:
-                break
-        if updated:
-            self.curve.setData(self.plotdata)
-
 
 if __name__ == '__main__':
 
