@@ -1,5 +1,3 @@
-""" Plot white noise signal with sounddevice and pyqtgraph"""
-
 import queue
 import sys
 import threading
@@ -10,7 +8,6 @@ import sounddevice as sd
 from PyQt5 import QtWidgets, QtCore
 import pyqtgraph as pg
 
-from audio_plots import NoisePlot
 """
 SYSTEM INFO
 sample rate: 44100
@@ -22,82 +19,123 @@ bit depth: 24bit integer
 fs = 44100
 #chunk = 1024
 #keep the volume between 0 and 1 so I don't blow my speakers
-volume = .2
-#downsample = 10 #amount to downsample
-window = 200 #ms visible time
-interval = 30 #ms min time between plot updates
-
+volume = .8
 
 fftOrder = 10 #size of the FFT window
 fftSize = 1024 #number of points FFT will operate on 2^fftOrder
 
+freq1 = 220
+freq2 = 329.63
+angle1 = 0.0
+angle2 = 0.0
+delta1 = 0.0
+delta2 = 0.0
+
+def set_angledelta(freq, fs):
+    cyclesPerSample = freq/fs
+    angle_delta = cyclesPerSample*2.0*np.pi
+    return(angle_delta)
+
+def update_angle(current_angle, angle_delta):
+    return(current_angle+angle_delta)
+
 #fill an numpy array with the data
-def noise_callback(outdata, frames, time, status):
-    noise = np.random.normal(0,volume, size=(frames,1)).astype(np.float32)
+def audio_callback(outdata, frames, time, status):
+    for sample in range(frames):
+        global angle1
+        global angle2
+        current_sample = volume*(np.sin(angle1)+np.sin(angle2))
 
-    #PUSH DATA TO fftq
+        try:
+            q.put_nowait(current_sample)
+        except queue.Full:
+            pass
 
-    #Output data
-    outdata[:]=noise.reshape(-1,1)
+        outdata[sample] = current_sample
+        angle1 += delta1
+        angle2 += delta2
+
 
 def play_audio():
-    with sd.OutputStream(samplerate=fs,channels=1, callback=noise_callback):
+    with sd.OutputStream(samplerate=fs,channels=1, callback=audio_callback):
         while True:
             sd.sleep(1000)
 
-"""INSERT CLASS TO ACTUALLY MAKE THE GRAPH HERE"""
+
 class Spectrogram(QtWidgets.QMainWindow):
-    def __init__():
+    def __init__(self, data_queue, fftsize):
         super().__init__()
+        self.q = data_queue
+        self.n = fftsize
 
-    """
-    Boiler Plate Plot Setup
-    Use pyqtgraph ImageItem
+        #number of rows is half the fftsize becuase we drop negative freq
+        self.viz_data = np.zeros((int(fftsize/2)-1, 50))
 
-    y aixs: frequency AT LOG SCALE
-    x axis: each tic is one processed block of fft
-    color is strength of frequency
+        self.img_widget = pg.GraphicsLayoutWidget()
+        self.setCentralWidget(self.img_widget)
 
-    Update graph
-    shift all data left by one tix on the x aixs
-    and add the new data to the end, the right most tick
-    """
+        self.p1 = self.img_widget.addPlot(title = '')
 
+        self.img = pg.ImageItem()
+        self.img.setColorMap('turbo')
+        self.p1.addItem(self.img)
 
-    drawNextLineOfSpectrogram(self):
-        #IMPLAMENT HERE
+        self.img.setImage(self.viz_data, autoLevels = True)
 
-    repaint(self):
-        #PROBABLY A BUILT IN FUNCTION FOR THIS
+        # Timer for updates
+        self.timer = QtCore.QTimer()
+        self.timer.timeout.connect(self.update_plot)
+        self.timer.start(30)
+
+        """
+        TODO:
+        set y axis to log scale
+        set y axis labels to freq
+        freq = np.fft.fftfreq(n)
+        """
+
+        self.index = 0
+        self.new_data = np.zeros(self.n)
+        self.NextBlockReady = False
+
+    def update_data(self):
+
+        #calculate PSD
+        A = np.fft.fft(self.new_data, self.n, norm="forward") #only doing a forward transform for viz
+        A = A[1: int(self.n/2)]
+        PSD = np.abs(A)**2
+        #PSD = np.reshape(PSD, (-1,1)) #many rows one column
+
+        # Add new PSD to visuale data block
+        self.viz_data = np.roll(self.viz_data, -1, axis = 1) #roll first col to last
+        self.viz_data[:,-1] = PSD #replace last column
+
 
     def update_plot(self):
-        if(nextBlockReady):
-            drawNextLineOfSpectrogram()
-            nextBlockReady = False
-            repaint()
+        while not self.q.empty():
+            if self.index == self.n:
+                self.update_data()
+                self.img.setImage(self.viz_data, autoLevels = True)
+                self.index = 0
+
+            self.new_data[self.index]=self.q.get_nowait().flatten() #add new sample
+            self.index += 1
+
 
 if __name__ == '__main__':
 
     app = QtWidgets.QApplication(sys.argv) #why pass sys.argv?
 
-    #DATA STRUCTURES FOR FFT
-    #create queue to load in data for fft FIFO?
-    #should we use a queue here? is there a better way to set the size?
-    fftq = queue.Queue(maxsize=fftSize)
-    fftData = np.zeros(fftSize*2) #why does this need ot be nice the size
-
-    #Helpers
-    q_index = 0
-    nextBlockReady=False
+    q = queue.Queue(maxsize=fftSize)
 
     #create seperate audio thread. what is daemon?
     audio_thread = threading.Thread(target=play_audio, daemon=True)
     audio_thread.start()
 
     #run graph app
-    window = NoisePlot(q, fs=fs, downsample=downsample, window_ms=window)
+    window = Spectrogram(q, fftSize)
 
-    window.setWindowTitle("White Noise Wave")
+    window.setWindowTitle("Spectrogram Plot")
     window.show()
 
     sys.exit(app.exec_()) #what dis do?

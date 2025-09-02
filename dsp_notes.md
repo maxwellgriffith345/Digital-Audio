@@ -32,6 +32,7 @@
   - 'data_queue' is a refernce to the queue outside the class not a copy
   - python objects are 'mutable' so assignment binds another name to the same object
   - read more about 'mutable' objects in python
+- Create a circular buffer using Deque??
 
 
 ## DSP Programming
@@ -48,3 +49,16 @@
   - the number of points the FFT will operate on is 2^order
   - why?
   - it's convered to binary??
+- numpy fft
+  - what do the values returned by fft represent?
+  - is it the amplitude at that freq?
+  - how do you get the power at each frequency?
+> When the input a is a time-domain signal and A = fft(a), np.abs(A) is its amplitude spectrum and np.abs(A)**2 is its power spectrum.
+  - how do you get the frequencies returned by the fft?
+  - Could I use rfft becuase the input is strictly real?
+> When the input is purely real, its transform is Hermitian, i.e., the component at frequency is the complex conjugate of the component at frequency
+, which means that for real inputs there is no information in the negative frequency components that is not already available from the positive frequency components. The family of rfft functions is designed to operate on real inputs, and exploits this symmetry by computing only the positive frequency components, up to and including the Nyquist frequency. Thus, n input points produce n/2+1 complex output points. The inverses of this family assumes the same symmetry of its input, and for an output of n points uses n/2+1 input points.
+-fft returns the same number of frequency buckets as n samples passed to it
+-for n time series data points, fft returns n frequency data points
+- fft is symetric so half of these are the negative frequencies
+- when we graph the PSD we have the freq >1

@@ -22,11 +22,12 @@ def gaussian_array(length=100, mean=None, std=10):
     # Gaussian formula, scaled so peak = 1
     values = np.exp(-0.5 * ((x - mean) / std) ** 2)
     values /= values.max()  # normalize so peak = 1
-
+    
     return values.reshape(1, -1)
 
 def update_data(data):
-    new_data = gaussian_array()
+    mean = np.random.randint(10,90)
+    new_data = gaussian_array(mean=mean)
     data = np.roll(data, -1, axis = 0)
     data[-1] = new_data
     return data
