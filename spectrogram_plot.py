@@ -25,7 +25,7 @@ fftOrder = 10 #size of the FFT window
 fftSize = 1024 #number of points FFT will operate on 2^fftOrder
 
 freq1 = 220
-freq2 = 329.63
+freq2 = 500
 angle1 = 0.0
 angle2 = 0.0
 delta1 = 0.0
@@ -44,7 +44,7 @@ def audio_callback(outdata, frames, time, status):
     for sample in range(frames):
         global angle1
         global angle2
-        current_sample = volume*(np.sin(angle1)+np.sin(angle2))
+        current_sample = volume*(np.sin(angle1)+np.sin(angle2)+np.random.normal())
 
         try:
             q.put_nowait(current_sample)
@@ -68,6 +68,7 @@ class Spectrogram(QtWidgets.QMainWindow):
         self.q = data_queue
         self.n = fftsize
 
+
         #number of rows is half the fftsize becuase we drop negative freq
         self.viz_data = np.zeros((int(fftsize/2)-1, 50))
 
@@ -76,7 +77,7 @@ class Spectrogram(QtWidgets.QMainWindow):
 
         self.p1 = self.img_widget.addPlot(title = '')
 
-        self.img = pg.ImageItem()
+        self.img = pg.ImageItem(axisOrder='row-major')
         self.img.setColorMap('turbo')
         self.p1.addItem(self.img)
 
@@ -125,9 +126,10 @@ class Spectrogram(QtWidgets.QMainWindow):
 if __name__ == '__main__':
 
     app = QtWidgets.QApplication(sys.argv) #why pass sys.argv?
-
     q = queue.Queue(maxsize=fftSize)
 
+    delta1 = set_angledelta(freq1, fs)
+    delta2 = set_angledelta(freq2, fs)
     #create seperate audio thread. what is daemon?
     audio_thread = threading.Thread(target=play_audio, daemon=True)
     audio_thread.start()
