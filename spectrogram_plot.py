@@ -63,24 +63,23 @@ def play_audio():
 
 
 class Spectrogram(QtWidgets.QMainWindow):
+
+    imgH = 512
+    imgW = 512
+
     def __init__(self, data_queue, fftsize):
         super().__init__()
         self.q = data_queue
         self.n = fftsize
 
-
         #number of rows is half the fftsize becuase we drop negative freq
-        self.viz_data = np.zeros((int(fftsize/2)-1, 50))
-
+        self.viz_data = np.zeros((self.imgH, self.imgW))
         self.img_widget = pg.GraphicsLayoutWidget()
         self.setCentralWidget(self.img_widget)
-
         self.p1 = self.img_widget.addPlot(title = '')
-
         self.img = pg.ImageItem(axisOrder='row-major')
         self.img.setColorMap('turbo')
         self.p1.addItem(self.img)
-
         self.img.setImage(self.viz_data, autoLevels = True)
 
         # Timer for updates
@@ -88,29 +87,36 @@ class Spectrogram(QtWidgets.QMainWindow):
         self.timer.timeout.connect(self.update_plot)
         self.timer.start(30)
 
-        """
-        TODO:
-        set y axis to log scale
-        set y axis labels to freq
-        freq = np.fft.fftfreq(n)
-        """
-
-        self.index = 0
         self.new_data = np.zeros(self.n)
-        self.NextBlockReady = False
+        self.new_col = np.zeros(self.imgH)
+        self.index = 0
 
+        # self.NextBlockReady = False
+        self.skew_scalar = np.exp(np.log(np.arange(1,self.imgH)/self.imgH)*0.2)
+        #length = 511
+        #run into a divide by zero error
+        #print(len(self.skew_scalar))
     def update_data(self):
 
         #calculate PSD
         A = np.fft.fft(self.new_data, self.n, norm="forward") #only doing a forward transform for viz
-        A = A[1: int(self.n/2)]
-        PSD = np.abs(A)**2
-        #PSD = np.reshape(PSD, (-1,1)) #many rows one column
+        A_pos = A[1: int(self.n/2)] #length = 511
+        freq_mag = np.abs(A_pos) #many rows one column
+
+
+
+        for pixel in list(range(1, self.imgH+1)):
+            skew= 1-np.exp(np.log(pixel/self.imgH)*0.2)
+            fft_index = np.clip(int(skew*len(A_pos)),0, len(A_pos)-1) #I think we are off by 1
+            level = freq_mag[fft_index]
+            self.new_col[pixel-1]=level
+
 
         # Add new PSD to visuale data block
         self.viz_data = np.roll(self.viz_data, -1, axis = 1) #roll first col to last
-        self.viz_data[:,-1] = PSD #replace last column
+        self.viz_data[:,-1] = self.new_col #replace last column
 
+        self.index = 0
 
     def update_plot(self):
         while not self.q.empty():
