@@ -55,12 +55,10 @@ def audio_callback(outdata, frames, time, status):
         angle1 += delta1
         angle2 += delta2
 
-
 def play_audio():
     with sd.OutputStream(samplerate=fs,channels=1, callback=audio_callback):
         while True:
             sd.sleep(1000)
-
 
 class Spectrogram(QtWidgets.QMainWindow):
 
@@ -89,34 +87,23 @@ class Spectrogram(QtWidgets.QMainWindow):
 
         self.new_data = np.zeros(self.n)
         self.new_col = np.zeros(self.imgH)
+
         self.index = 0
 
-        # self.NextBlockReady = False
-        self.skew_scalar = np.exp(np.log(np.arange(1,self.imgH)/self.imgH)*0.2)
-        #length = 511
-        #run into a divide by zero error
-        #print(len(self.skew_scalar))
     def update_data(self):
-
-        #calculate PSD
+        #calculate Freq Mag
         A = np.fft.fft(self.new_data, self.n, norm="forward") #only doing a forward transform for viz
-        A_pos = A[1: int(self.n/2)] #length = 511
-        freq_mag = np.abs(A_pos) #many rows one column
-
-
+        freq_mag = np.abs(A[1: int(self.n/2)]) #select only postiive freq
 
         for pixel in list(range(1, self.imgH+1)):
             skew= 1-np.exp(np.log(pixel/self.imgH)*0.2)
-            fft_index = np.clip(int(skew*len(A_pos)),0, len(A_pos)-1) #I think we are off by 1
+            fft_index = np.clip(int(skew*len(freq_mag)),0, len(freq_mag)-1) #I think we are off by 1
             level = freq_mag[fft_index]
             self.new_col[self.imgH - (pixel)]=level
-
 
         # Add new PSD to visuale data block
         self.viz_data = np.roll(self.viz_data, -1, axis = 1) #roll first col to last
         self.viz_data[:,-1] = self.new_col #replace last column
-
-        self.index = 0
 
     def update_plot(self):
         while not self.q.empty():
