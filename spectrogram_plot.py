@@ -24,7 +24,7 @@ volume = .8
 fftOrder = 10 #size of the FFT window
 fftSize = 1024 #number of points FFT will operate on 2^fftOrder
 
-freq1 = 220
+freq1 = 2200
 freq2 = 500
 angle1 = 0.0
 angle2 = 0.0
@@ -109,7 +109,7 @@ class Spectrogram(QtWidgets.QMainWindow):
             skew= 1-np.exp(np.log(pixel/self.imgH)*0.2)
             fft_index = np.clip(int(skew*len(A_pos)),0, len(A_pos)-1) #I think we are off by 1
             level = freq_mag[fft_index]
-            self.new_col[pixel-1]=level
+            self.new_col[self.imgH - (pixel)]=level
 
 
         # Add new PSD to visuale data block
@@ -125,7 +125,7 @@ class Spectrogram(QtWidgets.QMainWindow):
                 self.img.setImage(self.viz_data, autoLevels = True)
                 self.index = 0
 
-            self.new_data[self.index]=self.q.get_nowait().flatten() #add new sample
+            self.new_data[self.index]=self.q.get_nowait() #add new sample
             self.index += 1
 
 
