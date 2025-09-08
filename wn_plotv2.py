@@ -10,7 +10,7 @@ import sounddevice as sd
 from PyQt5 import QtWidgets, QtCore
 import pyqtgraph as pg
 
-from audio_plots import NoisePlot
+from audio_plots import WavePlot
 """
 SYSTEM INFO
 sample rate: 44100
@@ -64,7 +64,7 @@ if __name__ == '__main__':
     audio_thread.start()
 
     #run graph app
-    window = NoisePlot(q, fs=fs, downsample=downsample, window_ms=window)
+    window = WavePlot(q, fs=fs, downsample=downsample, window_ms=window)
 
     window.setWindowTitle("White Noise Wave")
     window.show()
