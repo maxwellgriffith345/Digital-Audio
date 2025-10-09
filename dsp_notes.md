@@ -62,3 +62,17 @@
 -for n time series data points, fft returns n frequency data points
 - fft is symetric so half of these are the negative frequencies
 - when we graph the PSD we have the freq >1
+
+
+## ADSR
+- how to create an ADSR envelope and adjust the parameters?
+- oscialtor works together with the envelope
+- state machine (FSM: finite state machine)
+  - what is it how do we use it?
+  - trigger of midi input
+- [C++ Tutorial Envelopes](https://learn.bela.io/tutorials/c-plus-plus-for-real-time-audio-programming/envelopes/)
+- couldn't we use convolution to control the gain?
+
+
+## Programming
+- Need to improve understanding of context and how to manage context
