@@ -39,9 +39,10 @@ tableSize = 128
 class WavetableOscillator():
     def __init__(self, tableToUse, tableSize):
         self.wavetable = tableToUse #refernce to wavetable
+        self.tableSize = tableSize
         self.currentIndex = 0.0 #float
         self.tableDelta = 0.0 #foat
-        self.tableSize = tableSize
+
 
     def setFrequency(self, freq):
         self.tableDelta = self.tableSize*freq/fs #CHECK THIS IS FLOAT
@@ -64,10 +65,7 @@ class WavetableOscillator():
         multiple by tablesize
         """
 
-    """
-    TODO
-    interpolate between the wave table values
-    """
+
     def getNextSample(self):
         current_indx = self.currentIndex #copy so we don't accidently reassign
         index0 = floor(current_indx) #could cast to int but this is more readable IMO
@@ -130,9 +128,10 @@ move it to a buffer in the synth class
 class Synth():
     def __init__(self):
         self.tableSize = 128
-        self.waveTable = []
+        self.waveTable = np.zeros(self.tableSize)
+        self.bufferSize = 1024 #safe assumption for hi latency
+        self.buffer = np.zeros(self.bufferSize)
         self.createWavetable()
-
 
     def createWavetable(self):
         #divide the 2pi cycle in 127 sections
@@ -141,7 +140,7 @@ class Synth():
 
         for i in range(self.tableSize):
             sample = np.sin(currentAngle)
-            self.waveTable.append(sample)
+            self.waveTable[i] = sample
             currentAngle += angleDelta
 
     def prepareToPlay(self):
@@ -151,11 +150,15 @@ class Synth():
 
     """ Re-write this """
     def audio_callback(self, outdata, frames, time, status):
-        samples = [] #needs to ndarray
+        if self.bufferSize < frames:
+            #reallocate buffer. prob shouldn't do this in audio thread
+            self.buffer = np.zeros(frames)
+            self.bufferSize = frames
+
         for i in range(frames):
-            samples.append(self.oscillator.getNextSample())
-        samples = np.array(samples).reshape(-1,1)
-        outdata[:] = samples
+            self.buffer[i]=self.oscillator.getNextSample()
+        #samples = np.array(samples).reshape(-1,1)
+        outdata[:] = self.buffer[:frames].reshape(-1,1)
 
 #How do I wrap this or pass the synth call back?
 def play_audio(call_back):
@@ -166,8 +169,6 @@ def play_audio(call_back):
 
 if __name__ == '__main__':
 
-    #waveTable =[] #probably something better to use than a list
-    #tableSize = 128
 
     #createWavetable()
 
