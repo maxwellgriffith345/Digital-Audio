@@ -33,7 +33,10 @@
   - python objects are 'mutable' so assignment binds another name to the same object
   - read more about 'mutable' objects in python
 - Create a circular buffer using Deque??
-
+- __call()__ method of a class
+  - turns a class into a callable instance
+  - instance of a class with __call()__ behave like functions
+  - what does that mean?
 
 ## DSP Programming
 - How to pass audio data from real time audio call back to NRT threads for graphs etc?
@@ -76,3 +79,60 @@
 
 ## Programming
 - Need to improve understanding of context and how to manage context
+
+## MIDI
+- Overall flow
+  - connect to device
+  - get message from the device
+  - update dsp parameters with data from message
+- Questions
+- How to convert MIDI note to pitch in hertz?
+``` cpp
+double MidiMessage::getMidiNoteInHertz (const int noteNumber, const double frequencyOfA) noexcept
+{
+    return frequencyOfA * std::pow (2.0, (noteNumber - 69) / 12.0);
+}
+```
+- we are finding a scalar to multiple A440 by to get our desired note
+- so how much (or how little if <1) do we need to multiple 440 by? how "far away" is our desire note
+-The midi note for A440 is 69, so subtract 69 to get the distance from A of the pitch we want to find in terms of midi note distance??
+- Divide by 12? is this because there are twelve notes?
+- take 2 to the power of this number? we precieve frequency in log scale (2^x)
+  - a one note step of low notes/pitch is a small move between frequencies
+  - but the precived one note step of high notes/pitch is a relatvely large move between frequencies
+
+
+  what is this calculation? why subtract 69 and divide by 12? How is midi pitch layed out
+- How to pass note on and note off commands to an envelope to activate it
+- what context should the midi classes or functions be in? should we put it in a Synth class context
+- if it's in the same context as the DSP componenets how do you run the MIDI functionality on a different thread?
+
+## RtMidi
+``` python
+open_midiinput(port = )
+```
+open a MIDI port for input and r
+eturn a MidiIn instance (object) and name of the MIDI port (tuple)
+
+MidiIn class
+built in ring buffer of 1024 to store messages until retrived by get_message
+when using a callback function the ring buffer does not apply
+
+Methods
+.get_message()
+returnsa MIDI message from the buffer and the time delta since last message
+returns tuple (message, delta)
+
+.open_port(port number)
+
+.set_callback(callbackFunc, data = None)
+function is called whenever a MIDI message is received
+callbackFunc must take two arguments
+first is a tuple with (message, delta time)
+data is passed when callback is registered
+data can be any Python object and can be used inside the
+callback function to access data that would otherwise not be in scope
+so you could pass a synth object to it?
+
+messeage is a list with three parts
+note on/off (on = 144, off = 128), pitch, velocity]
