@@ -75,6 +75,7 @@
   - trigger of midi input
 - [C++ Tutorial Envelopes](https://learn.bela.io/tutorials/c-plus-plus-for-real-time-audio-programming/envelopes/)
 - couldn't we use convolution to control the gain?
+-https://python.plainenglish.io/build-your-own-python-synthesizer-part-2-66396f6dad81
 
 
 ## Programming
